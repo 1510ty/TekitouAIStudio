@@ -1,12 +1,72 @@
 package com.mc1510ty.TekitouAIStudio;
 
+import com.mc1510ty.TekitouAIStudio.tokenizer.bytelevelbpe.ByteLevelBPE;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
 public class Main {
     private Scanner scanner;
 
-    public void main(String[] args) {
+    public void main(String[] args) throws IOException {
+
+
+
+        List<String> corpus = List.of(
+                "マイクラやCities2など、様々なゲームを遊んでいます。",
+                "マイクラのサーバーを開発しています。",
+                "JavaでTokenizerを開発しています。",
+                "マイクラのサーバーを開発しています。",
+                "JavaでTokenizerを開発しています。"
+        );
+
+        // 学習
+        ByteLevelBPE tokenizer =
+                ByteLevelBPE.train(corpus, 400);
+
+        // エンコード
+        String text = "マイクラやCities2など、様々なゲーム！";
+        int[] tokens = tokenizer.encode(text);
+
+        System.out.println("Vocabulary: " + tokenizer.vocabularySize());
+        System.out.println("Tokens: " + Arrays.toString(tokens));
+
+        // デコード
+        String decoded = tokenizer.decode(tokens);
+        System.out.println("Decoded: " + decoded);
+        System.out.println("Match: " + text.equals(decoded));
+
+        // EOS
+        int[] withEos = tokenizer.encodeWithEos(text);
+        System.out.println("EOS: " + withEos[withEos.length - 1]);
+
+        // 保存・読み込み
+        tokenizer.save(Path.of("bpe.model"));
+        ByteLevelBPE loaded =
+                ByteLevelBPE.load(Path.of("bpe.model"));
+
+        System.out.println(
+                "Loaded: " + loaded.decode(loaded.encode(text))
+        );
+
+
+
+        System.out.println("\n--- Token Details ---");
+
+        for (int tokenId : tokens) {
+            System.out.printf(
+                    "%4d : %s%n",
+                    tokenId,
+                    tokenizer.getTokenDescription(tokenId)
+            );
+        }
+
+
+
         scanner = new Scanner(System.in);
         printStartMessage();
         IO.println("モードを選択:");
@@ -34,13 +94,47 @@ public class Main {
         IO.println();
     }
 
-    private String taiwa(String message) {
-        String str = "";
-        while (Objects.equals(str, "")) {
-            IO.print(message);
-            str = scanner.nextLine();
+
+
+    private void newModel() {
+        IO.println();
+        IO.println("モデル新規作成ウィザード");
+        IO.println();
+        IO.println("モデルタイプを選択");
+        IO.println("1: 言語(会話)");
+        IO.println("2: 画像");
+        IO.println("3: 音声");
+        IO.println("4: 動画");
+        IO.println();
+        int modelType = getIntRangeScanner("モデルタイプ: ", 1, 4);
+        if (modelType == 1) {
+            newLanguageModel();
+        } else {
+            IO.println("まだ未対応()");
         }
-        return str;
+    }
+
+    private void newLanguageModel() {
+        IO.println();
+        IO.println("モデルアーキテクチャを選択");
+        IO.println("1: Mamba-3");
+        IO.println();
+        int modelArchitecture = getIntRangeScanner("モデルアーキテクチャ: ", 1,1);
+    }
+
+
+
+
+    private int getIntRangeScanner(String message, int range1, int range2) {
+        int interger;
+        while (true) {
+            interger = getIntScanner(message);
+            if (interger >= range1 && interger <= range2) {
+                break;
+            }
+            IO.println(range1 + "～" + range2 + "の範囲でお願いします");
+        }
+        return interger;
     }
 
     private int getIntScanner(String message) {
@@ -56,29 +150,12 @@ public class Main {
         }
     }
 
-    private void newModel() {
-        IO.println();
-        IO.println("モデル新規作成ウィザード");
-        IO.println();
-        IO.println("モデルタイプを選択");
-        IO.println("1: 言語(会話)");
-        IO.println("2: 画像");
-        IO.println("3: 音声");
-        IO.println("4: 動画");
-        IO.println();
-        int modelType = getIntRangeScanner("モデルタイプ: ", 1, 4);
-
-    }
-
-    private int getIntRangeScanner(String message, int range1, int range2) {
-        int interger;
-        while (true) {
-            interger = getIntScanner(message);
-            if (interger >= range1 && interger <= range2) {
-                break;
-            }
-            IO.println(range1 + "～" + range2 + "の範囲でお願いします");
+    private String taiwa(String message) {
+        String str = "";
+        while (Objects.equals(str, "")) {
+            IO.print(message);
+            str = scanner.nextLine();
         }
-        return interger;
+        return str;
     }
 }

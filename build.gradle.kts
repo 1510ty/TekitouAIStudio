@@ -263,8 +263,7 @@ tasks.register<Exec>("run") {
             val command =
                 "java --enable-native-access=ALL-UNNAMED " +
                         "--sun-misc-unsafe-memory-access=allow " +
-                        "-jar \"$jarFile\" --debug " +
-                        "--enable_validation_layer && pause && exit"
+                        "-jar \"$jarFile\" && pause && exit"
 
             commandLine(
                 "cmd",
@@ -282,9 +281,7 @@ tasks.register<Exec>("run") {
                 "--enable-native-access=ALL-UNNAMED",
                 "--sun-misc-unsafe-memory-access=allow",
                 "-jar",
-                jarFile,
-                "--debug",
-                "--enable_validation_layer"
+                jarFile
             )
         }
     }
