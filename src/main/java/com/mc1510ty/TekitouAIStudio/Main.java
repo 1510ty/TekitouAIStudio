@@ -15,58 +15,6 @@ public class Main {
     public void main(String[] args) throws IOException {
 
 
-
-        List<String> corpus = List.of(
-                "マイクラやCities2など、様々なゲームを遊んでいます。",
-                "マイクラのサーバーを開発しています。",
-                "JavaでTokenizerを開発しています。",
-                "マイクラのサーバーを開発しています。",
-                "JavaでTokenizerを開発しています。"
-        );
-
-        // 学習
-        ByteLevelBPE tokenizer =
-                ByteLevelBPE.train(corpus, 400);
-
-        // エンコード
-        String text = "マイクラやCities2など、様々なゲーム！";
-        int[] tokens = tokenizer.encode(text);
-
-        System.out.println("Vocabulary: " + tokenizer.vocabularySize());
-        System.out.println("Tokens: " + Arrays.toString(tokens));
-
-        // デコード
-        String decoded = tokenizer.decode(tokens);
-        System.out.println("Decoded: " + decoded);
-        System.out.println("Match: " + text.equals(decoded));
-
-        // EOS
-        int[] withEos = tokenizer.encodeWithEos(text);
-        System.out.println("EOS: " + withEos[withEos.length - 1]);
-
-        // 保存・読み込み
-        tokenizer.save(Path.of("bpe.model"));
-        ByteLevelBPE loaded =
-                ByteLevelBPE.load(Path.of("bpe.model"));
-
-        System.out.println(
-                "Loaded: " + loaded.decode(loaded.encode(text))
-        );
-
-
-
-        System.out.println("\n--- Token Details ---");
-
-        for (int tokenId : tokens) {
-            System.out.printf(
-                    "%4d : %s%n",
-                    tokenId,
-                    tokenizer.getTokenDescription(tokenId)
-            );
-        }
-
-
-
         scanner = new Scanner(System.in);
         printStartMessage();
         IO.println("モードを選択:");
@@ -117,9 +65,12 @@ public class Main {
     private void newLanguageModel() {
         IO.println();
         IO.println("モデルアーキテクチャを選択");
-        IO.println("1: Mamba-3");
+        IO.println("1: 独自モデル(名称未定)");
         IO.println();
         int modelArchitecture = getIntRangeScanner("モデルアーキテクチャ: ", 1,1);
+        if (modelArchitecture == 1) {
+            executableDokuziModel();
+        }
     }
 
 
@@ -158,4 +109,6 @@ public class Main {
         }
         return str;
     }
+
+c
 }
