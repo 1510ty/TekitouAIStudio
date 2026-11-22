@@ -1,3 +1,4 @@
+
 name: Build
 
 on:
@@ -24,17 +25,16 @@ jobs:
           cache: gradle
 
       - name: GitのコミットIDを取得
-        id: git
         run: echo "GIT_COMMIT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: gradlewの実行権限付与
         run: chmod +x ./gradlew
 
-      # Vulkan類使うならコメント解除
-      #- name: VulkanSDKをインストール (glslc)
-      #  run: |
-      #    sudo apt-get update
-      #    sudo apt-get install -y glslc
+      # Vulkan類を使うならコメント解除
+      # - name: VulkanSDKをインストール (glslc)
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y glslc
 
       - name: ビルド
         run: ./gradlew shadowJar -PgitCommit=${GIT_COMMIT}
@@ -42,33 +42,31 @@ jobs:
       - name: 日時とコミットメッセージの解析
         id: parse_commit
         run: |
-          # アーティファクト用のタイムスタンプ
-          echo "JST_TIME=$(TZ=Asia/Tokyo date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
-          
-          # 直近のコミットメッセージを取得
-          commit_msg=$(git log -1 --pretty=%B)
+          commit_msg=$(git log -1 --pretty=%s)
           echo "Commit Message: $commit_msg"
 
-          # 1. [prerelease タイトル 説明] の判定
-          if [[ "$commit_msg" =~ \[prerelease[[:space:]]+([^[:space:]]+)[[:space:]]+([^]]+)\] ]]; then
+          if [[ "$commit_msg" =~ ^\[prerelease[[:space:]]+([^[:space:]]+)[[:space:]]+([^]]+)\]$ ]]; then
             title="${BASH_REMATCH[1]}"
             description="${BASH_REMATCH[2]}"
+
             echo "RELEASE_TYPE=prerelease" >> $GITHUB_ENV
             echo "RELEASE_TAG=$title" >> $GITHUB_ENV
             echo "RELEASE_NAME=$title" >> $GITHUB_ENV
             echo "RELEASE_BODY=$description" >> $GITHUB_ENV
             echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+
             echo "プレリリースを作成します: tag=$title, body=$description"
 
-          # 2. [release タイトル 説明] の判定
-          elif [[ "$commit_msg" =~ \[release[[:space:]]+([^[:space:]]+)[[:space:]]+([^]]+)\] ]]; then
+          elif [[ "$commit_msg" =~ ^\[release[[:space:]]+([^[:space:]]+)[[:space:]]+([^]]+)\]$ ]]; then
             title="${BASH_REMATCH[1]}"
             description="${BASH_REMATCH[2]}"
+
             echo "RELEASE_TYPE=release" >> $GITHUB_ENV
             echo "RELEASE_TAG=$title" >> $GITHUB_ENV
             echo "RELEASE_NAME=$title" >> $GITHUB_ENV
             echo "RELEASE_BODY=$description" >> $GITHUB_ENV
             echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+
             echo "通常リリースを作成します: tag=$title, body=$description"
 
           else
@@ -76,30 +74,80 @@ jobs:
             echo "リリース条件には一致しませんでした。"
           fi
 
+      - name: Actions成果物のパッケージ作成
+        id: package
+        run: |
+          mapfile -t jars < <(find build/libs -maxdepth 1 -type f -name '*.jar' | sort)
+
+          if [ ${#jars[@]} -ne 1 ]; then
+            echo "JARファイルが1つに特定できません。"
+            printf '%s\n' "${jars[@]}"
+            exit 1
+          fi
+
+          JAR_PATH="${jars[0]}"
+          JAR_NAME="$(basename "$JAR_PATH")"
+          ARTIFACT_NAME="${JAR_NAME%.jar}"
+
+          mkdir -p package
+          cp "$JAR_PATH" "package/$JAR_NAME"
+
+          cat > package/start.bat <<EOF
+          @echo off
+          chcp 65001 > nul
+          java --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow -Xmx12G -XX:+UseStringDeduplication -XX:+UseZGC -jar "%~dp0${JAR_NAME}"
+          pause
+          exit
+          EOF
+
+          echo "jar_name=$JAR_NAME" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$ARTIFACT_NAME" >> "$GITHUB_OUTPUT"
+
+      # Actionsの成果物としてアップロード
       - name: 配置（Artifactsアップロード）
         uses: actions/upload-artifact@v6
         with:
-          name: TekitouAIStudio-${{ env.JST_TIME }}-${{ env.GIT_COMMIT }}
-          path: |
-            build/libs/*.jar
+          name: ${{ steps.package.outputs.artifact_name }}
+          path: package/*
+          if-no-files-found: error
 
-      - name: リリース用ファイルのリネームと整理
+      # リリース用ZIPを作成
+      - name: リリース用ファイルのパッケージ作成
         if: env.RELEASE_TYPE != 'none'
         run: |
           mkdir -p release_assets
-          
-          # jarをリネーム
-          cp build/libs/*-all.jar release_assets/TekitouAIStudio-${{ env.RELEASE_TAG }}.jar 2>/dev/null || cp build/libs/*.jar release_assets/TekitouAIStudio-${{ env.RELEASE_TAG }}.jar
 
+          JAR_NAME="TekitouAIStudio-${RELEASE_TAG}.jar"
+          RELEASE_DIR="release_package"
+
+          mkdir -p "$RELEASE_DIR"
+
+          cp "build/libs/${{ steps.package.outputs.jar_name }}" "$RELEASE_DIR/$JAR_NAME"
+
+          cat > "$RELEASE_DIR/start.bat" <<EOF
+          @echo off
+          chcp 65001 > nul
+          java --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow -Xmx12G -XX:+UseStringDeduplication -XX:+UseZGC -jar "%~dp0${JAR_NAME}"
+          pause
+          exit
+          EOF
+
+          zip -j "release_assets/TekitouAIStudio-${RELEASE_TAG}.zip" \
+            "$RELEASE_DIR/$JAR_NAME" \
+            "$RELEASE_DIR/start.bat"
+
+      # GitHub Releaseを作成
       - name: GitHub Releaseを作成
         if: env.RELEASE_TYPE != 'none'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
           name: ${{ env.RELEASE_NAME }}
           body: ${{ env.RELEASE_BODY }}
           prerelease: ${{ env.IS_PRERELEASE }}
           files: |
-            release_assets/*.jar
+            release_assets/*.zip
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -12,7 +12,7 @@ public class Main {
 
     public void main(String[] args) throws IOException {
 
-        scanner = new Scanner(System.in);
+        scanner = new Scanner(System.in, System.getProperty("stdin.encoding"));
         getvaluesystemin = new getValueSystemIn(scanner);
         printStartMessage();
         IO.println("モードを選択:");
