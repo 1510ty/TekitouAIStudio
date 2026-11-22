@@ -263,6 +263,8 @@ tasks.register<Exec>("run") {
             val command =
                 "java --enable-native-access=ALL-UNNAMED " +
                         "--sun-misc-unsafe-memory-access=allow " +
+                        "-Xmx12G -Xmx1G " +
+                        "-XX:+UseStringDeduplication -XX:+UseZGC " +
                         "-jar \"$jarFile\" && pause && exit"
 
             commandLine(
@@ -280,6 +282,8 @@ tasks.register<Exec>("run") {
                 "java",
                 "--enable-native-access=ALL-UNNAMED",
                 "--sun-misc-unsafe-memory-access=allow",
+                "-Xmx12G -Xmx1G",
+                "-XX:+UseStringDeduplication -XX:+UseZGC",
                 "-jar",
                 jarFile
             )
