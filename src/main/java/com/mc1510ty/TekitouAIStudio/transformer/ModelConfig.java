@@ -6,4 +6,7 @@ public class ModelConfig {
     long hiddenSize;
     long layerCount;
     long attentionHeads;
+    long intermediateSize;
+    long maxSequenceLength;
+    long numKeyValueHeads;
 }

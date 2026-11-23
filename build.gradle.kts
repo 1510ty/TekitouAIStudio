@@ -263,7 +263,7 @@ tasks.register<Exec>("run") {
             val command =
                 "chcp 65001 && java --enable-native-access=ALL-UNNAMED " +
                         "--sun-misc-unsafe-memory-access=allow " +
-                        "-Xmx12G -Xms1G" +
+                        "-Xmx12G -Xms1G " +
                         "-XX:+UseStringDeduplication -XX:+UseZGC " +
                         "-jar \"$jarFile\" && pause && exit"
 

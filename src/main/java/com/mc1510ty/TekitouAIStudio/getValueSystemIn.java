@@ -44,4 +44,16 @@ public class getValueSystemIn {
         }
         return str;
     }
+
+    public boolean getYesNo(String message) {
+        boolean bool;
+        while (true) {
+            String str = taiwa(message);
+            if (Objects.equals(str, "y")) {
+                return true;
+            } else if (Objects.equals(str, "n")) {
+                return false;
+            }
+        }
+    }
 }
