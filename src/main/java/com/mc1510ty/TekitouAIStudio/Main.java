@@ -1,5 +1,6 @@
 package com.mc1510ty.TekitouAIStudio;
 
+import com.mc1510ty.TekitouAIStudio.transformer.ModelConfig;
 import com.mc1510ty.TekitouAIStudio.transformer.Transformer;
 
 import java.io.IOException;
@@ -65,15 +66,17 @@ public class Main {
         IO.println("モデルアーキテクチャを選択");
         IO.println("1: Transformer");
         IO.println();
-        int modelArchitecture = getvaluesystemin.getIntRangeScanner("モデルアーキテクチャ: ", 1,1);
+        int modelArchitecture =
+                getvaluesystemin.getIntRangeScanner(
+                        "モデルアーキテクチャ: ", 1, 1);
         if (modelArchitecture == 1) {
             if (transformer == null) {
                 transformer = new Transformer(getvaluesystemin);
             }
-            transformer.newTransformerModel();
+            ModelConfig modelConfig =
+                    transformer.newTransformerModel();
         }
     }
-
 
 
 }

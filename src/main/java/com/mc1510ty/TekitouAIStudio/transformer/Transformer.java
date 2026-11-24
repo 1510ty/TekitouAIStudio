@@ -11,7 +11,7 @@ public class Transformer {
         this.getvaluesystemin = getvaluesystemin;
     }
 
-    public void newTransformerModel() {
+    public ModelConfig newTransformerModel() {
         ModelConfig modelConfigTmp = new ModelConfig();
 
         IO.println();
@@ -190,21 +190,9 @@ public class Transformer {
             IO.println("最大コンテキスト長: " + modelConfigTmp.maxSequenceLength);
             IO.println("KVヘッド数: " + modelConfigTmp.numKeyValueHeads);
             if (getvaluesystemin.getYesNo("上記の設定でよろしいですか？: ")) {
-                break;
+                return modelConfigTmp;
             }
         }
-
-
-
-
-
-
-
-
-
-
-
-
     }
 
     private String getTokenizerName(int tokenizer) {
@@ -213,4 +201,6 @@ public class Transformer {
         }
         return "不明なトークナイザー名";
     }
+
+
 }

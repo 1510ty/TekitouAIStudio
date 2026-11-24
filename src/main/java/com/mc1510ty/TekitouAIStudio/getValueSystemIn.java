@@ -46,7 +46,6 @@ public class getValueSystemIn {
     }
 
     public boolean getYesNo(String message) {
-        boolean bool;
         while (true) {
             String str = taiwa(message);
             if (Objects.equals(str, "y")) {
