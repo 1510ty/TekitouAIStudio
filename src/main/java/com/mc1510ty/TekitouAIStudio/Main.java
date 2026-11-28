@@ -11,7 +11,7 @@ public class Main {
     private getValueSystemIn getvaluesystemin;
     private Transformer transformer;
 
-    public void main(String[] args) throws IOException {
+    public void start(String[] args) throws IOException {
 
         scanner = new Scanner(System.in, System.getProperty("stdin.encoding"));
         getvaluesystemin = new getValueSystemIn(scanner);
@@ -75,8 +75,12 @@ public class Main {
             }
             ModelConfig modelConfig =
                     transformer.newTransformerModel();
+
+//            createTransformerModel(modelConfig);
         }
     }
+
+
 
 
 }

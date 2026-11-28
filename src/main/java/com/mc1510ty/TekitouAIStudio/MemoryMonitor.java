@@ -5,17 +5,18 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MemoryMonitor extends JFrame {
-    private JLabel heapLabel;
-    private JProgressBar heapProgressBar;
-    private JLabel nonHeapLabel;
-    private JLabel totalLabel;
+    private final JLabel heapLabel;
+    private final JProgressBar heapProgressBar;
+    private final JLabel nonHeapLabel;
+    private final JLabel totalLabel;
 
-    private Timer timer;
+    private final Timer timer;
 
-    public MemoryMonitor() {
-        setTitle("TekitouLLM - Memory Monitor");
+    public MemoryMonitor(String appName) {
+        setTitle(appName + " - Memory Monitor");
         setSize(380, 240);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -48,7 +49,7 @@ public class MemoryMonitor extends JFrame {
         add(panel);
 
         // 500ミリ秒ごとにデータを更新
-        timer = new Timer(500, e -> updateMetrics());
+        timer = new Timer(500, _ -> updateMetrics());
         timer.start();
     }
 
@@ -84,9 +85,46 @@ public class MemoryMonitor extends JFrame {
         totalLabel.setText(String.format("総消費量: %d MB", totalUsed));
     }
 
-    public static void launch() {
+    @Override
+    public void dispose() {
+        if (timer != null) {
+            timer.stop();
+        }
+
+        super.dispose();
+    }
+
+    public static void launch(String appName) {
+        Thread mainThread = Thread.currentThread();
+
+        AtomicReference<MemoryMonitor> monitorRef =
+                new AtomicReference<>();
+
         SwingUtilities.invokeLater(() -> {
-            new MemoryMonitor().setVisible(true);
+            MemoryMonitor monitor = new MemoryMonitor(appName);
+            monitorRef.set(monitor);
+            monitor.setVisible(true);
         });
+
+        Thread watcher = new Thread(() -> {
+            try {
+                mainThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+
+            SwingUtilities.invokeLater(() -> {
+                MemoryMonitor monitor = monitorRef.get();
+
+                if (monitor != null) {
+                    monitor.dispose();
+                }
+            });
+
+        }, "MemoryMonitor-Watcher");
+
+        watcher.setDaemon(true);
+        watcher.start();
     }
 }

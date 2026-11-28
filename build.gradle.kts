@@ -127,7 +127,16 @@ repositories {
 // Dependencies
 // ========================================
 
+tasks.test {
+    useJUnitPlatform()
+}
+
 dependencies {
+
+    implementation("com.fasterxml.jackson.core:jackson-core:2.23.0")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     // ------------------------------------
     // SWT
@@ -261,10 +270,10 @@ tasks.register<Exec>("run") {
                 .lowercase().contains("windows")) {
 
             val command =
-                "chcp 65001 && java --enable-native-access=ALL-UNNAMED " +
+                "chcp 65001 > nul && java --enable-native-access=ALL-UNNAMED " +
                         "--sun-misc-unsafe-memory-access=allow " +
                         "-Xmx12G -Xms1G " +
-                        "-XX:+UseStringDeduplication -XX:+UseZGC " +
+                        "-XX:+UseZGC " +
                         "-jar \"$jarFile\" && pause && exit"
 
             commandLine(
@@ -283,9 +292,9 @@ tasks.register<Exec>("run") {
                 "--enable-native-access=ALL-UNNAMED",
                 "--sun-misc-unsafe-memory-access=allow",
                 "-Xmx12G -Xmx1G",
-                "-XX:+UseStringDeduplication -XX:+UseZGC",
+                "-XX:+UseZGC",
                 "-jar",
-                jarFile
+                jarFile,
             )
         }
     }
